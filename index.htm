@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -164,9 +165,11 @@
         const historyList = document.getElementById('history-list');
         const resultModal = document.getElementById('result-modal');
         const resultCard = resultModal.querySelector('div');
+	const resultText = document.getElementById('result-text');
 
         // --- 初始化 ---
         window.onload = () => {
+            loadOptions();
             loadSettings();
             renderOptions();
             drawWheel();
@@ -400,7 +403,7 @@
             
             isSpinning = false;
             spinBtn.disabled = false;
-            canvas.style.transition = ""; // 重置 transition
+            //canvas.style.transition = ""; // 重置 transition
         }
 
         function triggerVisualEffect(type) {
@@ -454,17 +457,20 @@
         window.updateOption = (index, val) => {
             options[index] = val;
             drawWheel();
+            saveOptions();
         };
 
         window.removeOption = (index) => {
             if (options.length <= 1) return;
             options.splice(index, 1);
             renderOptions();
+            saveOptions();
         };
 
         document.getElementById('add-option').onclick = () => {
             options.push("新選項 " + (options.length + 1));
             renderOptions();
+            saveOptions();
         };
 
         // --- 歷史紀錄 ---
@@ -511,6 +517,26 @@
             document.getElementById('bgm-vol').oninput = updateVolumes;
             document.getElementById('sfx-vol').oninput = updateVolumes;
         }
+
+// 儲存選項到 Local Storage
+function saveOptions() {
+    localStorage.setItem('wheel_options_list', JSON.stringify(options));
+}
+
+// 從 Local Storage 讀取選項
+function loadOptions() {
+    const saved = localStorage.getItem('wheel_options_list');
+    if (saved) {
+        try {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                options = parsed;
+            }
+        } catch (e) {
+            console.error("讀取選項紀錄失敗", e);
+        }
+    }
+}
 
     </script>
 </body>
