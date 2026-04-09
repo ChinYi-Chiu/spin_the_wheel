@@ -150,6 +150,7 @@
 
     <script>
         // --- 狀態管理 ---
+		console.log("開始囉!");
         let options = ["大餐一份", "再轉一次", "銘謝惠顧", "電影票", "休假一天", "幫自己加薪1%"];
         let isSpinning = false;
         let currentRotation = 0;
@@ -318,12 +319,23 @@
             isSpinning = true;
             spinBtn.disabled = true;
             
-            const spinTime = 5000; // 基本轉動 5 秒
+            // --- [優化 1] 初始推力隨機化 ---
+            // 每次開始轉動前，給予一個隨機的微小偏移（0 ~ 1 弧度）
+            // 這會讓 Ease 曲線的基礎值發生位移
+            const initialKick = Math.random();
+
+            // --- [優化 2] 總旋轉時間隨機化 ---
+            // 讓旋轉時間在 4000ms 到 6000ms 之間變動
+            const spinTime = 4000 + Math.random() * 2000;
+
             const isSuddenStop = Math.random() < 0.1; // 10% 機率急停
-            const extraSpins = 5 + Math.random() * 5;
+
+            // --- [優化 3] 強化旋轉圈數與目標隨機性 ---
+            // 圈數範圍擴大，且 randomTarget 確保涵蓋完整圓周
+            const extraSpins = 7 + Math.random() * 7; 
             const randomTarget = Math.random() * (2 * Math.PI);
             
-            let targetRotation = currentRotation + (extraSpins * 2 * Math.PI) + randomTarget;
+            let targetRotation = currentRotation + (extraSpins * 2 * Math.PI) + randomTarget+ initialKick;
             
             const start = performance.now();
             let lastTickAngle = 0;
@@ -338,9 +350,10 @@
                     ease = progress; 
                 } else {
                     // 正常邏輯：先快後慢 (Cubic Out)
-                    ease = 1 - Math.pow(1 - progress, 3);
+                    ease = 1 - Math.pow(1 - progress, 4);
                 }
 
+                
                 const currentStepRotation = currentRotation + (targetRotation - currentRotation) * ease;
                 canvas.style.transform = `rotate(${currentStepRotation}rad)`;
 
@@ -355,14 +368,26 @@
                     requestAnimationFrame(animate);
                 } else {
                     const addSteps = Math.floor(Math.random() * 5);
-                    const stepAngle = Math.random()*1.12; //   每一步的角度 (0~1.5rad隨機)
-                    const stepDuration = 200+Math.random()*300; // 每一步的時間 (200~500ms隨機)
-                    console.log("追加步樹   ", addSteps, "每步角度", stepAngle.toFixed(2), "每步時間", stepDuration.toFixed(0) + "ms");
+
+                    // 如果 addSteps 為 0，或者是急停模式
+                    if (addSteps === 0 || isSuddenStop) {
+                        // 同步當前的旋轉角度到全域變數，確保 showResult 計算正確
+                        currentRotation = currentStepRotation % (2 * Math.PI);
+                        // 清除 transition，避免影響下一次轉動
+                        canvas.style.transition = "none";
+                        // 直接進入結果
+                        setTimeout(showResult, 500);
+                        return;
+                    }
+
+                    const stepAngle = 0.05 + Math.random() * 1.12; //   每一步的角度 (0~1.5rad隨機)
+                    const stepDuration = 200 + Math.random() * 300; // 每一步的時間 (200~500ms隨機)
+                    console.log("追加步數   ", addSteps, "每步角度", stepAngle.toFixed(2), "每步時間", stepDuration.toFixed(0) + "ms");
                     // 2. 定義非同步執行步進的函式
                     const executeExtraSteps = async (stepsLeft, currentTotalRotation) => {
                         if (stepsLeft <= 0 || isSuddenStop) {
                             // 如果沒步數了，或者是急停觸發，就直接進結果
-                            setTimeout(showResult, 1500);
+                            setTimeout(showResult, 500);
                             return;
                         }
 
