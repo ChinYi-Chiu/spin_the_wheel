@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>極致戲劇感轉盤</title>
+    <title>快樂大轉盤-督嚕嚕嚕嚕嚕 燈</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
@@ -83,8 +83,8 @@
         
         <!-- 左側：轉盤區域 -->
         <div class="flex flex-col items-center gap-6">
-            <h1 class="pixel-font text-xl text-yellow-400 text-center mb-4">命運大轉盤</h1>
-            
+            <h1 class="pixel-font text-xl text-yellow-400 text-center mb-4">快樂大轉盤 督嚕嚕嚕嚕嚕 燈</h1>
+            <h3 class="text-sm text-gray-400 mb-6"><i>充滿惡趣味與情緒效果的瘋狂大轉盤，絕對讓你欲罷不能!</i></h3>
             <div class="wheel-container">
                 <div class="pointer"></div>
                 <canvas id="wheel-canvas" width="600" height="600"></canvas>
@@ -150,7 +150,7 @@
 
     <script>
         // --- 狀態管理 ---
-        let options = ["大餐一份", "再轉一次", "銘謝惠顧", "電影票", "休假一天", "加薪1%"];
+        let options = ["大餐一份", "再轉一次", "銘謝惠顧", "電影票", "休假一天", "幫自己加薪1%"];
         let isSpinning = false;
         let currentRotation = 0;
         let audioCtx = null;
@@ -204,7 +204,7 @@
 
         function playBGM() {
             // 簡單的 8-bit 背景音樂循環 (C Major Pentatonic)
-            const notes = [261.63, 293.66, 329.63, 392.00, 440.00];
+            const notes = [261.63, 293.66, 329.63, 392.00, 440.00 , 392.00 , 329.63 , 293.66 ]; // C4, D4, E4, G4, A4
             let step = 0;
             
             setInterval(() => {
@@ -354,28 +354,40 @@
                 if (progress < 1) {
                     requestAnimationFrame(animate);
                 } else {
-                    finishSpin(currentStepRotation, isSuddenStop);
+                    const addSteps = Math.floor(Math.random() * 5);
+                    const stepAngle = Math.random()*1.12; //   每一步的角度 (0~1.5rad隨機)
+                    const stepDuration = 200+Math.random()*300; // 每一步的時間 (200~500ms隨機)
+                    console.log("追加步樹   ", addSteps, "每步角度", stepAngle.toFixed(2), "每步時間", stepDuration.toFixed(0) + "ms");
+                    // 2. 定義非同步執行步進的函式
+                    const executeExtraSteps = async (stepsLeft, currentTotalRotation) => {
+                        if (stepsLeft <= 0 || isSuddenStop) {
+                            // 如果沒步數了，或者是急停觸發，就直接進結果
+                            setTimeout(showResult, 1500);
+                            return;
+                        }
+
+                        // 執行一步
+                        const nextRotation = currentTotalRotation + stepAngle;
+                        currentRotation = nextRotation; // 更新全域變數
+
+                        // 戲劇化的移動動畫
+                        canvas.style.transition = `transform ${stepDuration / 1000}s cubic-bezier(0.175, 0.885, 0.32, 1.275)`;
+                        canvas.style.transform = `rotate(${nextRotation}rad)`;
+                        
+                        playTick(); // 播放聲音
+                        console.log("追加步數剩餘:", stepsLeft - 1);
+
+                        // 等待 n 秒後執行下一步
+                        setTimeout(() => {
+                            executeExtraSteps(stepsLeft - 1, nextRotation);
+                        }, stepDuration);
+                    };
+                    // 3. 開始執行追加步數
+                    executeExtraSteps(addSteps, currentStepRotation);
                 }
             }
 
             requestAnimationFrame(animate);
-        }
-
-        function finishSpin(finalRotation, wasSuddenStop) {
-            currentRotation = finalRotation % (2 * Math.PI);
-            
-            // 戲劇效果：偷偷前進一小步（如果不是急停的話）
-            if (!wasSuddenStop) {
-                setTimeout(() => {
-                    currentRotation += 0.15;
-                    canvas.style.transition = "transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275)";
-                    canvas.style.transform = `rotate(${currentRotation}rad)`;
-                    
-                    setTimeout(showResult, 1500);
-                }, 200);
-            } else {
-                setTimeout(showResult, 1500);
-            }
         }
 
         function showResult() {
@@ -400,7 +412,7 @@
 
             playWinSound(effectType === 'confetti' ? 'major' : 'minor');
             addToHistory(winner);
-            
+            console.log("最終旋轉角度:", currentRotation.toFixed(2), "弧度，指向選項索引:", index+1, "抽到的是:", winner);
             isSpinning = false;
             spinBtn.disabled = false;
             //canvas.style.transition = ""; // 重置 transition
